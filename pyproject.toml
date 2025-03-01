@@ -24,3 +24,5 @@ pytest = "^8.3.4"
 black = "^25.1.0"
 isort = "^6.0.0"
 
+[tool.poetry.scripts]
+start = "recipe_match.scripts:run_app"
