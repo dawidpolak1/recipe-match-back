@@ -21,6 +21,11 @@ class Meal(BaseModel):
     class Config:
         """Pydantic config for the Meal model."""
         populate_by_name = True
+        # This is crucial - it tells Pydantic to use the model field names in the JSON output
+        alias_generator = None
+        json_encoders = {
+            # Add any custom serialization here if needed
+        }
 
 class MealList(BaseModel):
     """Model representing a list of meals."""
