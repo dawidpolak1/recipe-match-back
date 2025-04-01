@@ -90,41 +90,4 @@ async def get_recipes_by_ingredients(
         return []
     
     return matching_recipes
-
-@router.get("/combined-search", response_model=Dict[str, Any])
-async def get_combined_recipes(
-    ingredients: List[str] = Query(..., description="List of available ingredients"),
-    match_threshold: float = Query(0.5, description="Minimum threshold for local recipes"),
-    client: MealDBClient = Depends(get_meal_db_client)
-):
-    """
-    Find recipes that match the provided ingredients from both local database and external API.
-    
-    This endpoint combines results from our static dataset and the MealDB API.
-    
-    Args:
-        ingredients: List of ingredients available to the user
-        match_threshold: Threshold for local recipe matching
-        client: MealDB API client
-    
-    Returns:
-        Dictionary containing both local and external matching recipes
-    """
-    if not ingredients:
-        raise HTTPException(status_code=400, detail="At least one ingredient must be provided")
-    
-    # Get local matches
-    local_matches = find_recipes_by_ingredients(ingredients, match_threshold)
-    
-    # Get external matches from MealDB API (for the first ingredient only, as the API 
-    # currently only supports searching by a single ingredient)
-    external_matches = {}
-    if ingredients:
-        response = client.search_meals_by_ingredient(ingredients[0])
-        if "error" not in response:
-            external_matches = response
-    
-    return {
-        "local_recipes": local_matches,
-        "external_recipes": external_matches
-    } 
+ 
