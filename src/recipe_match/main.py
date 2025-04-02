@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from recipe_match.routes import recipe_router
+from recipe_match.routes import recipe_router, local_recipes_router, detailed_recipes_router
 
 # Initialize the FastAPI application
 app = FastAPI(
@@ -23,6 +23,8 @@ app.add_middleware(
 
 # Include routers
 app.include_router(recipe_router)
+app.include_router(local_recipes_router)
+app.include_router(detailed_recipes_router)
 
 @app.get("/")
 async def root():
