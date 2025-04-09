@@ -4,7 +4,6 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 from recipe_match.models.domain_models import Ingredient
-
 class Meal(BaseModel):
     """Model representing a meal from TheMealDB API."""
     id: str = Field(..., alias="idMeal")
@@ -26,6 +25,17 @@ class Meal(BaseModel):
             # Add any custom serialization here if needed
         }
 
+class MealSummary(BaseModel):
+    """Model representing a brief meal summary from TheMealDB API search results."""
+    id: str = Field(..., alias="idMeal")
+    name: str = Field(..., alias="strMeal")
+    thumbnail: Optional[str] = Field(None, alias="strMealThumb")
+    
+    class Config:
+        """Pydantic config for the MealSummary model."""
+        populate_by_name = True
+        alias_generator = None
+
 class MealList(BaseModel):
     """Model representing a list of meals."""
-    meals: Optional[List[Meal]] = None 
+    meals: Optional[List[MealSummary]] = None 

@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from recipe_match.models.domain_models import Ingredient
 
-class MealResponse(BaseModel):
+class DetailMealResponse(BaseModel):
     """Model representing the API response for a meal."""
     id: str
     name: str
@@ -19,6 +19,12 @@ class MealResponse(BaseModel):
     tags: Optional[str] = None
     youtube: Optional[str] = None
     ingredients: Optional[List[Ingredient]] = None
+
+class MealSummaryResponse(BaseModel):
+    """Model representing the API response for a meal summary."""
+    id: str
+    name: str
+    thumbnail: Optional[str] = None
 
 class ErrorResponse(BaseModel):
     """Model representing an error response."""

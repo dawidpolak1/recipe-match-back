@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any
+from fastapi import APIRouter, HTTPException, Depends, Path, Query
+from typing import Dict, Any, List
+import re
 
 from recipe_match.api_client import MealDBClient
-from recipe_match.models import Meal, MealResponse, ErrorResponse
+from recipe_match.models import Meal, DetailMealResponse, MealList, ErrorResponse, MealSummaryResponse
 
 # Create a router for recipe-related endpoints
 router = APIRouter(
@@ -15,15 +16,15 @@ router = APIRouter(
 def get_meal_db_client():
     return MealDBClient()
 
-def process_meal_data(meal_data: Dict[str, Any]) -> MealResponse:
+def process_meal_data(meal_data: Dict[str, Any]) -> DetailMealResponse:
     """
-    Process raw meal data from TheMealDB API into a structured MealResponse.
+    Process raw meal data from TheMealDB API into a structured DetailMealResponse.
     
     Args:
         meal_data: Raw meal data from TheMealDB API
         
     Returns:
-        MealResponse: Processed meal data in the API response format
+        DetailMealResponse: Processed meal data in the API response format
     """
     # Process the response to extract ingredients
     ingredients = []
@@ -43,7 +44,7 @@ def process_meal_data(meal_data: Dict[str, Any]) -> MealResponse:
     meal = Meal(**meal_data)
     
     # Return a MealResponse model
-    return MealResponse(
+    return DetailMealResponse(
         id=meal.id,
         name=meal.name,
         category=meal.category,
@@ -55,7 +56,7 @@ def process_meal_data(meal_data: Dict[str, Any]) -> MealResponse:
         ingredients=meal.ingredients
     )
 
-@router.get("/random", response_model=MealResponse)
+@router.get("/random", response_model=DetailMealResponse)
 async def get_random_recipe(
     client: MealDBClient = Depends(get_meal_db_client)
 ):
@@ -70,18 +71,48 @@ async def get_random_recipe(
     # Extract and process the meal data
     return process_meal_data(response["meals"][0])
 
-@router.get("/by-ingredient/{ingredient}", response_model=Dict)
+@router.get("/by-ingredient", response_model=List[MealSummaryResponse])
 async def get_recipes_by_ingredient(
-    ingredient: str,
+    ingredient: str = Query(
+        None,  # Default is None, so we can check if it's provided
+        title="Ingredient",
+        description="The ingredient to search for in recipes",
+    ),
     client: MealDBClient = Depends(get_meal_db_client)
 ):
     """Get recipes that contain the specified ingredient."""
+    if not ingredient:
+        raise HTTPException(
+            status_code=400, 
+            detail="Ingredient is required and must be a string"
+        )
+    
+    # Check if the ingredient is just a number
+    if ingredient.isdigit():
+        raise HTTPException(
+            status_code=400,
+            detail="Ingredient cannot be a number"
+        )
+        
     response = client.search_meals_by_ingredient(ingredient)
     if "error" in response:
         raise HTTPException(status_code=500, detail=response["error"])
-    return response
+    
+    # Handle empty response
+    if not response.get("meals"):
+        return []
+    
+    # Transform the API response to use our own response model
+    return [
+        MealSummaryResponse(
+            id=meal.get("idMeal"),
+            name=meal.get("strMeal"),
+            thumbnail=meal.get("strMealThumb")
+        ) 
+        for meal in response.get("meals", [])
+    ]
 
-@router.get("/by-id/{meal_id}", response_model=MealResponse)
+@router.get("/by-id/{meal_id}", response_model=DetailMealResponse)
 async def get_meal_by_id(
     meal_id: str,
     client: MealDBClient = Depends(get_meal_db_client)
