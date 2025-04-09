@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict
+from typing import Dict, Any
 
 from recipe_match.api_client import MealDBClient
 from recipe_match.models import Meal, MealResponse, ErrorResponse
@@ -15,42 +15,16 @@ router = APIRouter(
 def get_meal_db_client():
     return MealDBClient()
 
-@router.get("/random", response_model=Dict)
-async def get_random_recipe(
-    client: MealDBClient = Depends(get_meal_db_client)
-):
-    """Get a random recipe from the MealDB API."""
-    response = client.get_random_meal()
-    if "error" in response:
-        raise HTTPException(status_code=500, detail=response["error"])
-    return response
-
-@router.get("/by-ingredient/{ingredient}", response_model=Dict)
-async def get_recipes_by_ingredient(
-    ingredient: str,
-    client: MealDBClient = Depends(get_meal_db_client)
-):
-    """Get recipes that contain the specified ingredient."""
-    response = client.search_meals_by_ingredient(ingredient)
-    if "error" in response:
-        raise HTTPException(status_code=500, detail=response["error"])
-    return response
-
-@router.get("/by-id/{meal_id}", response_model=MealResponse)
-async def get_meal_by_id(
-    meal_id: str,
-    client: MealDBClient = Depends(get_meal_db_client)
-):
-    """Get a specific meal by its ID from the MealDB API."""
-    response = client.get_meal_by_id(meal_id)
-    if "error" in response:
-        raise HTTPException(status_code=500, detail=response["error"])
-    if not response.get("meals") or not response["meals"][0]:
-        raise HTTPException(status_code=404, detail=f"Meal with ID {meal_id} not found")
+def process_meal_data(meal_data: Dict[str, Any]) -> MealResponse:
+    """
+    Process raw meal data from TheMealDB API into a structured MealResponse.
     
-    # Extract the meal data from the response
-    meal_data = response["meals"][0]
-    
+    Args:
+        meal_data: Raw meal data from TheMealDB API
+        
+    Returns:
+        MealResponse: Processed meal data in the API response format
+    """
     # Process the response to extract ingredients
     ingredients = []
     for i in range(1, 21):  # TheMealDB has ingredients 1-20
@@ -80,4 +54,45 @@ async def get_meal_by_id(
         youtube=meal.youtube,
         ingredients=meal.ingredients
     )
+
+@router.get("/random", response_model=MealResponse)
+async def get_random_recipe(
+    client: MealDBClient = Depends(get_meal_db_client)
+):
+    """Get a random recipe from the MealDB API."""
+    response = client.get_random_meal()
+    if "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
+    
+    if not response.get("meals") or not response["meals"][0]:
+        raise HTTPException(status_code=404, detail="No random meal found")
+    
+    # Extract and process the meal data
+    return process_meal_data(response["meals"][0])
+
+@router.get("/by-ingredient/{ingredient}", response_model=Dict)
+async def get_recipes_by_ingredient(
+    ingredient: str,
+    client: MealDBClient = Depends(get_meal_db_client)
+):
+    """Get recipes that contain the specified ingredient."""
+    response = client.search_meals_by_ingredient(ingredient)
+    if "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
+    return response
+
+@router.get("/by-id/{meal_id}", response_model=MealResponse)
+async def get_meal_by_id(
+    meal_id: str,
+    client: MealDBClient = Depends(get_meal_db_client)
+):
+    """Get a specific meal by its ID from the MealDB API."""
+    response = client.get_meal_by_id(meal_id)
+    if "error" in response:
+        raise HTTPException(status_code=500, detail=response["error"])
+    if not response.get("meals") or not response["meals"][0]:
+        raise HTTPException(status_code=404, detail=f"Meal with ID {meal_id} not found")
+    
+    # Extract and process the meal data
+    return process_meal_data(response["meals"][0])
  
