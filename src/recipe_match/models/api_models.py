@@ -1,10 +1,9 @@
-from typing import List, Optional, Dict
+"""Models for API data coming from external sources like MealDB."""
+
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
-class Ingredient(BaseModel):
-    """Model representing a recipe ingredient with measurement."""
-    name: str
-    measurement: Optional[str] = None
+from recipe_match.models.domain_models import Ingredient
 
 class Meal(BaseModel):
     """Model representing a meal from TheMealDB API."""
@@ -29,8 +28,4 @@ class Meal(BaseModel):
 
 class MealList(BaseModel):
     """Model representing a list of meals."""
-    meals: Optional[List[Meal]] = None
-
-class ErrorResponse(BaseModel):
-    """Model representing an error response."""
-    detail: str 
+    meals: Optional[List[Meal]] = None 

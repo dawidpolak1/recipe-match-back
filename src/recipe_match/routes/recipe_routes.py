@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict
 
 from recipe_match.api_client import MealDBClient
-from recipe_match.models import ErrorResponse, Meal
+from recipe_match.models import Meal, MealResponse, ErrorResponse
 
 # Create a router for recipe-related endpoints
 router = APIRouter(
@@ -36,7 +36,7 @@ async def get_recipes_by_ingredient(
         raise HTTPException(status_code=500, detail=response["error"])
     return response
 
-@router.get("/by-id/{meal_id}")
+@router.get("/by-id/{meal_id}", response_model=MealResponse)
 async def get_meal_by_id(
     meal_id: str,
     client: MealDBClient = Depends(get_meal_db_client)
@@ -68,15 +68,16 @@ async def get_meal_by_id(
     # Create a Meal instance from the processed data
     meal = Meal(**meal_data)
     
-    return {
-        "id": meal.id,
-        "name": meal.name,
-        "category": meal.category,
-        "area": meal.area,
-        "instructions": meal.instructions,
-        "thumbnail": meal.thumbnail,
-        "tags": meal.tags,
-        "youtube": meal.youtube,
-        "ingredients": meal.ingredients
-    }
+    # Return a MealResponse model
+    return MealResponse(
+        id=meal.id,
+        name=meal.name,
+        category=meal.category,
+        area=meal.area,
+        instructions=meal.instructions,
+        thumbnail=meal.thumbnail,
+        tags=meal.tags,
+        youtube=meal.youtube,
+        ingredients=meal.ingredients
+    )
  
