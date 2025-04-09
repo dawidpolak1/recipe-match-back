@@ -52,7 +52,7 @@ class MealDBClient:
         
     def get_meal_by_id(self, meal_id: str) -> dict:
         """
-        Fetches a specific meal by its ID from theMealDB and transforms it to our model format.
+        Fetches a specific meal by its ID from theMealDB.
         
         Args:
             meal_id (str): The ID of the meal to fetch.
@@ -64,26 +64,7 @@ class MealDBClient:
         try:
             response = requests.get(url)
             response.raise_for_status()
-            data = response.json()
-            
-            # Process the response to extract ingredients
-            if data.get("meals") and data["meals"][0]:
-                meal = data["meals"][0]
-                # Extract ingredients and their measurements
-                ingredients = []
-                for i in range(1, 21):  # TheMealDB has ingredients 1-20
-                    ingredient_key = f"strIngredient{i}"
-                    measure_key = f"strMeasure{i}"
-                    if meal.get(ingredient_key) and meal[ingredient_key].strip():
-                        ingredients.append({
-                            "name": meal[ingredient_key],
-                            "measurement": meal.get(measure_key, "").strip() or None
-                        })
-                
-                # Add the ingredients list to the meal data
-                meal["ingredients"] = ingredients
-                
-            return data
+            return response.json()
         except requests.RequestException as error:
             # In a real implementation, log the error details.
             return {"error": f"Failed to fetch meal with ID '{meal_id}': {error}"}

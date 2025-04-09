@@ -48,11 +48,26 @@ async def get_meal_by_id(
     if not response.get("meals") or not response["meals"][0]:
         raise HTTPException(status_code=404, detail=f"Meal with ID {meal_id} not found")
     
-    # Create a Meal instance from the API response data
+    # Extract the meal data from the response
     meal_data = response["meals"][0]
+    
+    # Process the response to extract ingredients
+    ingredients = []
+    for i in range(1, 21):  # TheMealDB has ingredients 1-20
+        ingredient_key = f"strIngredient{i}"
+        measure_key = f"strMeasure{i}"
+        if meal_data.get(ingredient_key) and meal_data[ingredient_key].strip():
+            ingredients.append({
+                "name": meal_data[ingredient_key],
+                "measurement": meal_data.get(measure_key, "").strip() or None
+            })
+    
+    # Add the ingredients list to the meal data
+    meal_data["ingredients"] = ingredients
+    
+    # Create a Meal instance from the processed data
     meal = Meal(**meal_data)
     
-    # Explicitly construct the response dictionary with your desired field names
     return {
         "id": meal.id,
         "name": meal.name,
