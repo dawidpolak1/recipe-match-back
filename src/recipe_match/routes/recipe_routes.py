@@ -118,6 +118,13 @@ async def get_meal_by_id(
     client: MealDBClient = Depends(get_meal_db_client)
 ):
     """Get a specific meal by its ID from the MealDB API."""
+    # Validate meal_id is a number
+    if not meal_id.isdigit():
+        raise HTTPException(
+            status_code=400,
+            detail="meal id must be a number"
+        )
+    
     response = client.get_meal_by_id(meal_id)
     if "error" in response:
         raise HTTPException(status_code=500, detail=response["error"])
